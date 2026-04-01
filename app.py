@@ -5,97 +5,81 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Настройка страницы
 st.set_page_config(page_title="AI Customer Segmentation", layout="wide")
 
-st.title("🤖 Интеллектуальная система сегментации клиентов")
-st.write("Это приложение использует машинное обучение для автоматического определения профилей ваших клиентов.")
+st.title("🤖 AI-Powered Customer Segmentation System")
+st.write("This application leverages Machine Learning to automatically identify distinct customer profiles.")
 
-# 1. Загрузка файла в боковой панели
-st.sidebar.header("📁 Загрузка данных")
-uploaded_file = st.sidebar.file_uploader("Выберите CSV файл", type="csv")
+st.sidebar.header("📁 Data Upload")
+uploaded_file = st.sidebar.file_uploader("Choose a CSV file", type="csv")
 
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
-    st.sidebar.success("Файл успешно загружен!")
+    st.sidebar.success("File uploaded successfully!")
     
-    # 2. Настройки ИИ
-    st.sidebar.header("⚙️ Настройки алгоритма")
-    k = st.sidebar.slider("Количество сегментов (K)", 2, 10, 5)
+    st.sidebar.header("⚙️ Algorithm Settings")
+    k = st.sidebar.slider("Number of Segments (K)", 2, 10, 5)
     
-    # Подготовка признаков (берем доход и рейтинг трат)
     features = ['Annual Income (k$)', 'Spending Score (1-100)']
     X = df[features]
     
-    # Масштабирование данных
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     
-    # Обучение модели KMeans
     model = KMeans(n_clusters=k, init='k-means++', random_state=42)
     df['Cluster'] = model.fit_predict(X_scaled)
     
-    # 3. Визуализация и Анализ
     col1, col2 = st.columns([3, 2])
     
     with col1:
-        st.subheader("📍 Карта сегментов")
+        st.subheader("📍 Segment Map")
         fig, ax = plt.subplots(figsize=(10, 7))
         sns.scatterplot(
             data=df, x=features[0], y=features[1], 
             hue='Cluster', palette='viridis', s=150, ax=ax, alpha=0.7
         )
-        plt.title(f"Разделение на {k} групп")
+        plt.title(f"Segmentation into {k} Groups")
         st.pyplot(fig)
         
     with col2:
-        st.subheader("📝 Автоматическая интерпретация")
+        st.subheader("📝 Automated Interpretation")
         analysis = df.groupby('Cluster')[features].mean()
         
         for i in range(k):
             income = analysis.loc[i, features[0]]
             spending = analysis.loc[i, features[1]]
             
-            # Логика классификации
             if income > 70 and spending > 70:
-                label = "💎 VIP-клиенты"
-                color = "green"
-                advice = "Фокус на удержании, эксклюзивные предложения."
+                label = "💎 VIP Customers"
+                advice = "Focus on retention and exclusive offers."
             elif income > 70 and spending < 40:
-                label = "💰 Экономные богачи"
-                color = "blue"
-                advice = "Нужны скидки за объем и долгосрочные выгоды."
+                label = "💰 High-Income Savers"
+                advice = "Target with value-based and long-term benefits."
             elif income < 45 and spending > 70:
-                label = "🛍️ Активные транжиры"
-                color = "orange"
-                advice = "Идеально для новинок и импульсивных покупок."
+                label = "🛍️ Active Spenders"
+                advice = "Ideal for new arrivals and impulse purchases."
             elif income < 45 and spending < 40:
-                label = "🐌 Малоактивные"
-                color = "gray"
-                advice = "Требуются агрессивные акции для активации."
+                label = "🐌 Low-Activity"
+                advice = "Requires aggressive promotions to re-engage."
             else:
-                label = "📊 Средний класс"
-                color = "black"
-                advice = "Стандартная поддержка лояльности."
+                label = "📊 Standard Class"
+                advice = "Standard loyalty support and regular updates."
 
-            # Вывод карточки сегмента
-            with st.expander(f"Сегмент {i}: {label}"):
-                st.write(f"**Доход:** {income:.1f}k$ | **Траты:** {spending:.1f}")
+            with st.expander(f"Segment {i}: {label}"):
+                st.write(f"**Avg Income:** {income:.1f}k$ | **Avg Spending Score:** {spending:.1f}")
                 st.info(f"💡 {advice}")
 
-    # 4. Просмотр данных
     st.divider()
-    st.subheader("📂 Итоговая база данных с метками ИИ")
+    st.subheader("📂 Processed Dataset with AI Labels")
     st.dataframe(df.style.background_gradient(subset=['Cluster'], cmap='viridis'))
     
-    # Кнопка скачивания результата
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button(
-        label="📥 Скачать результат в CSV",
+        label="📥 Download Results (CSV)",
         data=csv,
         file_name='segmented_customers.csv',
         mime='text/csv',
     )
 
 else:
-    st.info("Пожалуйста, загрузите файл '......csv' через боковую панель, чтобы запустить анализ.")
+    st.info("Please upload a CSV file via the sidebar to start the analysis.")
